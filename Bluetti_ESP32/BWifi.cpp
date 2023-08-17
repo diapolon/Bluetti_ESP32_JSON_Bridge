@@ -9,7 +9,13 @@
 #include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP/archive/master.zip
 #include <ESPmDNS.h>
 #include <AsyncElegantOTA.h> // https://github.com/ayushsharma82/AsyncElegantOTA/archive/master.zip
-#include "display.h"
+
+#include <ArduinoJson.h>
+
+SemaphoreHandle_t jsonMutex = xSemaphoreCreateMutex();// Mutex for synchronizing JSON access
+DynamicJsonDocument jsonData(1024);
+
+
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -50,7 +56,7 @@ void eeprom_saveconfig(){
   EEPROM.put(0, wifiConfig);
   EEPROM.commit();
   EEPROM.end();
-}
+} 
 
 void setWiFiPowerSavingMode(){
   //esp_wifi_set_ps(WIFI_PS_MAX_MODEM); // maximum power saving, does not make sense here
@@ -59,6 +65,8 @@ void setWiFiPowerSavingMode(){
 }
 
 void initBWifi(bool resetWifi){
+  // init mutex for json writes
+  assert(jsonMutex);
 
   eeprom_read();
 
@@ -99,11 +107,7 @@ void initBWifi(bool resetWifi){
 		Serial.printf("Entered config mode:ip=%s, ssid='%s'\n", 
                         WiFi.softAPIP().toString().c_str(), 
                         wifiManager->getConfigPortalSSID().c_str());
-                        #ifdef DISPLAYSSD1306
-                          wifisignal(2); //AP mode
-                          wrDisp_IP(WiFi.softAPIP().toString().c_str());
-                          wrDisp_Status("Setup Wifi");
-                        #endif
+                        
 	});
   
   if (!wifiManager.autoConnect("Bluetti_ESP32")) {
@@ -124,18 +128,8 @@ void initBWifi(bool resetWifi){
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     // display will have blinking wifi signal until connected.
-    #ifdef DISPLAYSSD1306
-      disp_setPrevStateIcon(0);
-      wifisignal(0);
-      delay(200);
-      Serial.print(".");
-      disp_setPrevStateIcon(1);
-      wifisignal(0);
-    #else
-      delay(500);
-      Serial.print(".");
-    #endif
-
+    delay(500);
+    Serial.print(".");
   }
   
   WiFi.setAutoReconnect(true);
@@ -143,10 +137,7 @@ void initBWifi(bool resetWifi){
   Serial.println(F(""));
   Serial.println(F("IP address: "));
   Serial.println(WiFi.localIP());
-  #ifdef DISPLAYSSD1306
-    wrDisp_IP(WiFi.localIP().toString().c_str());
-    disp_setWifiSignal(1, WiFi.RSSI());
-  #endif
+  
   if (MDNS.begin(DEVICE_NAME)) {
     Serial.println(F("MDNS responder started"));
   }
@@ -183,6 +174,13 @@ void initBWifi(bool resetWifi){
       delay(2000);
       initBWifi(true);
   });
+  server.on("/getData", HTTP_GET, [](AsyncWebServerRequest *request){
+    String jsonStr;
+    serializeJson(jsonData, jsonStr);
+    Serial.println(F("application/json: Returning the current jsonData."));
+    request->send(200, "application/json", jsonStr);
+  });
+  
   //setup web server events
   events.onConnect([](AsyncEventSourceClient *client){
     if(client->lastId()){
@@ -203,6 +201,23 @@ void initBWifi(bool resetWifi){
 
 }
 
+void update_value(enum field_names field_name, String value){
+  // TODO do json stuff and store the value in a global value
+  xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
+  Serial.printf("Writing %s: %s", map_field_name(field_name).c_str(), value);
+  jsonData[map_field_name(field_name)] = value;
+  xSemaphoreGive(jsonMutex); // unlock
+/*
+  //sometimes we get empty values / wrong vales - all the time device_type is empty
+  if (map_field_name(field_name) == "device_type" && value.length() < 3){
+
+    Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
+    ESP.restart();
+   
+  } 
+*/
+}
+
 void handleWebserver() {
   
   //Serial.println(F("DEBUG handleWebserver"));
@@ -215,11 +230,6 @@ void handleWebserver() {
   }
 
   if ((millis() - lastTimeWebUpdate) > MSG_VIEWER_REFRESH_CYCLE*1000) {
-
-    #ifdef DISPLAYSSD1306
-      // update display
-      disp_setWifiSignal(1,WiFi.RSSI());
-    #endif
 
     // Send Events to the Web Server with current data
     events.send("ping",NULL,millis());

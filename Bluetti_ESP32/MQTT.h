@@ -15,5 +15,6 @@ extern int getPublishErrorCount();
 unsigned long getLastMQTTMessageTime();
 unsigned long getLastMQTTDeviceStateMessageTime();
 unsigned long getLastMQTTDeviceStateStatusMessageTime();
+extern String map_field_name(enum field_names f_name);
 
 #endif

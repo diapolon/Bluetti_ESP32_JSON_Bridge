@@ -2,6 +2,7 @@
 #define BWIFI_H
 #include "Arduino.h"
 #include "config.h"
+#include "DeviceType.h"
 
 typedef struct{
   int  salt = EEPROM_SALT;
@@ -19,5 +20,6 @@ extern void initBWifi(bool resetWifi);
 extern void handleWebserver();
 String processorWebsiteUpdates(const String& var);
 extern void AddtoMsgView(String data);
-  
+extern void update_value(enum field_names field_name, String value);
+
 #endif

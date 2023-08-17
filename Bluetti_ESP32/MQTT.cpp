@@ -341,7 +341,7 @@ void publishTopic(enum field_names field_name, String value){
     Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
     ESP.restart();
    
-  } 
+  }
   
   sprintf(publishTopicBuf, "bluetti/%s/state/%s", settings.bluetti_device_id, map_field_name(field_name).c_str() ); 
   if (strlen(settings.mqtt_server) == 0){
@@ -356,8 +356,8 @@ void publishTopic(enum field_names field_name, String value){
       AddtoMsgView(String(lastMQTTMessage) + ": " + map_field_name(field_name) + " -> " + value);
     }
   }
-  
  
+
 }
 
 void publishDeviceState(){
