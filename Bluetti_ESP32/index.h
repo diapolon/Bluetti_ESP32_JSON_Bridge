@@ -1,7 +1,7 @@
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>Bluetti MQTT Bridge</title>
+  <title>Bluetti JSON Bridge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html {font-family: Arial; display: inline-block; text-align: center;}
@@ -17,7 +17,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <div class="topnav">
-    <h1>Bluetti MQTT Bridge web server</h1>
+    <h1>Bluetti JSON Bridge web server</h1>
     <div class="version">
       Firmware Version: 0.1.1 (<a href='/update' target='_blank'>Update</a>)
     </div>
@@ -42,13 +42,9 @@ const char index_html[] PROGMEM = R"rawliteral(
         </span></p>
       </div>
       <div class="card">
-        <p>MQTT</p>
-          <p><span class="reading"></p>
-          <p>server: <span id="mqtt_ip">%MQTT_IP%</span></p>
-          <p>port: <span id="mqtt_port">%MQTT_PORT%</span></p>
-          <p>connected: <span id="mqtt_connected">%MQTT_CONNECTED%</span></p>
-          <p>last msg time: <span id="mqtt_last_msg_time">%LAST_MQTT_MSG_TIME%</span></p>
-        </span></p>
+        <p>JSON</p>
+          <a href="./getData">getData URL</a>
+        </p>
       </div>
       <div class="card">
         <p>Bluetooth</p>
@@ -57,14 +53,6 @@ const char index_html[] PROGMEM = R"rawliteral(
           <p>connected: <span id="bt_connected">%BT_CONNECTED%</span></p>
           <p>last msg time: <span id="bt_last_msg_time">%LAST_BT_MSG_TIME%</span></p>
           <p>publish errors: <span id="bt_error">%BT_ERROR%</span></p>
-          </span></p>
-        </div>
-      </div>
-      <div class="card">
-        <p><a href="/switchLogging" >switch logging mode</a></span></p>
-        <p>last messages (time / value):</p>
-          <p><span class="reading"></p>
-          <p><span id="last_msg">%LAST_MSG%</span></p>
           </span></p>
         </div>
       </div>
@@ -115,26 +103,6 @@ if (!!window.EventSource) {
   document.getElementById("rssi").innerHTML = e.data;
  }, false);
  
- source.addEventListener('mqtt_ip', function(e) {
-  console.log("mqtt_ip", e.data);
-  document.getElementById("mqtt_ip").innerHTML = e.data;
- }, false);
-
-  source.addEventListener('mqtt_port', function(e) {
-  console.log("mqtt_port", e.data);
-  document.getElementById("mqtt_port").innerHTML = e.data;
- }, false);
-
-  source.addEventListener('mqtt_connected', function(e) {
-  console.log("mqtt_connected", e.data);
-  document.getElementById("mqtt_connected").innerHTML = e.data;
- }, false);
-
-  source.addEventListener('mqtt_last_msg_time', function(e) {
-  console.log("mqtt_last_msg_time", e.data);
-  document.getElementById("mqtt_last_msg_time").innerHTML = e.data;
- }, false);
- 
  source.addEventListener('device_id', function(e) {
   console.log("device_id", e.data);
   document.getElementById("device_id").innerHTML = e.data;
@@ -149,12 +117,8 @@ source.addEventListener('bt_last_msg_time', function(e) {
   console.log("bt_last_msg_time", e.data);
   document.getElementById("bt_last_msg_time").innerHTML = e.data;
  }, false);
-
- source.addEventListener('last_msg', function(e) {
-  console.log("last_msg", e.data);
-  document.getElementById("last_msg").innerHTML = e.data;
- }, false);
 }
+
 </script>
 </body>
 </html>)rawliteral";

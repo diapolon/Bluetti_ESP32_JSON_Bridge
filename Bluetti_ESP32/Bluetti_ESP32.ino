@@ -1,6 +1,5 @@
 #include "BWifi.h"
 #include "BTooth.h"
-#include "MQTT.h"
 #include "config.h"
 
 unsigned long lastTime1 = 0;
@@ -21,12 +20,9 @@ void setup() {
 
   initBWifi(false);
   initBluetooth();
-  initMQTT();
-
 }
 
 void loop() {
   handleBluetooth();
-  handleMQTT(); 
   handleWebserver();
 }
