@@ -1,7 +1,6 @@
 #include "BluettiConfig.h"
 #include "BWifi.h"
 #include "BTooth.h"
-#include "MQTT.h"
 #include "index.h"  //Web page header file
 #include <EEPROM.h>
 #include <WiFiManager.h>
@@ -9,12 +8,14 @@
 #include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP/archive/master.zip
 #include <ESPmDNS.h>
 #include <AsyncElegantOTA.h> // https://github.com/ayushsharma82/AsyncElegantOTA/archive/master.zip
-
 #include <ArduinoJson.h>
+#include <utils.h>
+
 
 SemaphoreHandle_t jsonMutex = xSemaphoreCreateMutex();// Mutex for synchronizing JSON access
 DynamicJsonDocument jsonData(1024);
 
+int publishErrorCount = 0;
 
 
 AsyncWebServer server(80);
@@ -27,14 +28,288 @@ String lastMsg = "";
 bool msgViewerDetails = false;
 bool shouldSaveConfig = false;
 
-char mqtt_server[40] = "127.0.0.1";
-char mqtt_port[6]  = "1883";
 char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
 
 void saveConfigCallback () {
   shouldSaveConfig = true;
 }
 
+String map_field_name(enum field_names f_name){
+   switch(f_name) {
+      case DC_OUTPUT_POWER:
+        return "dc_output_power";
+        break; 
+      case AC_OUTPUT_POWER:
+        return "ac_output_power";
+        break; 
+      case DC_OUTPUT_ON:
+        return "dc_output_on";
+        break; 
+      case AC_OUTPUT_ON:
+        return "ac_output_on";
+        break; 
+      case AC_OUTPUT_MODE:
+        return "ac_output_mode";
+        break; 
+      case POWER_GENERATION:
+        return "power_generation";
+        break;       
+      case TOTAL_BATTERY_PERCENT:
+        return "total_battery_percent";
+        break; 
+      case DC_INPUT_POWER:
+        return "dc_input_power";
+        break;
+      case AC_INPUT_POWER:
+        return "ac_input_power";
+        break;
+      case AC_INPUT_VOLTAGE:
+        return "ac_input_voltage";
+        break;
+      case AC_INPUT_FREQUENCY:
+        return "ac_input_frequency";
+        break;
+      case PACK_VOLTAGE:
+        return "pack_voltage";
+        break;
+      case INTERNAL_PACK_VOLTAGE:
+        return "internal_pack_voltage";
+        break;
+      case SERIAL_NUMBER:
+        return "serial_number";
+        break;
+      case ARM_VERSION:
+        return "arm_version";
+        break;
+      case DSP_VERSION:
+        return "dsp_version";
+        break;
+      case DEVICE_TYPE:
+        return "device_type";
+        break;
+      case UPS_MODE:
+        return "ups_mode";
+        break;
+      case AUTO_SLEEP_MODE:
+        return "auto_sleep_mode";
+        break;
+      case GRID_CHARGE_ON:
+        return "grid_charge_on";
+        break;
+      case INTERNAL_AC_VOLTAGE:
+        return "internal_ac_voltage";
+        break;
+      case INTERNAL_AC_FREQUENCY:
+        return "internal_ac_frequency";
+        break;
+      case INTERNAL_CURRENT_ONE:
+        return "internal_current_one";
+        break;
+      case INTERNAL_POWER_ONE:
+        return "internal_power_one";
+        break;
+      case INTERNAL_CURRENT_TWO:
+        return "internal_current_two";
+        break;
+      case INTERNAL_POWER_TWO:
+        return "internal_power_two";
+        break;
+      case INTERNAL_CURRENT_THREE:
+        return "internal_current_three";
+        break;
+      case INTERNAL_POWER_THREE:
+        return "internal_power_three";
+        break;
+      case PACK_NUM_MAX:
+        return "pack_max_num";
+        break;
+      case PACK_NUM:
+        return "pack_num";
+        break;
+      case PACK_BATTERY_PERCENT:
+        return "pack_battery_percent";
+        break;
+      case INTERNAL_DC_INPUT_VOLTAGE:
+        return "internal_dc_input_voltage";
+        break;
+      case INTERNAL_DC_INPUT_POWER:
+        return "internal_dc_input_power";
+        break;
+      case INTERNAL_DC_INPUT_CURRENT:
+        return "internal_dc_input_current";
+        break;
+      case INTERNAL_CELL01_VOLTAGE:
+        return "internal_cell01_voltage";    
+        break;
+      case INTERNAL_CELL02_VOLTAGE:
+        return "internal_cell02_voltage";    
+        break;
+      case INTERNAL_CELL03_VOLTAGE:
+        return "internal_cell03_voltage";    
+        break;
+      case INTERNAL_CELL04_VOLTAGE:
+        return "internal_cell04_voltage";    
+        break;
+      case INTERNAL_CELL05_VOLTAGE:
+        return "internal_cell05_voltage";    
+        break;
+      case INTERNAL_CELL06_VOLTAGE:
+        return "internal_cell06_voltage";    
+        break;
+      case INTERNAL_CELL07_VOLTAGE:
+        return "internal_cell07_voltage";    
+        break;
+      case INTERNAL_CELL08_VOLTAGE:
+        return "internal_cell08_voltage";    
+        break;
+      case INTERNAL_CELL09_VOLTAGE:
+        return "internal_cell09_voltage";    
+        break;
+      case INTERNAL_CELL10_VOLTAGE:
+        return "internal_cell10_voltage";    
+        break;
+      case INTERNAL_CELL11_VOLTAGE:
+        return "internal_cell11_voltage";    
+        break;
+      case INTERNAL_CELL12_VOLTAGE:
+        return "internal_cell12_voltage";    
+        break;
+      case INTERNAL_CELL13_VOLTAGE:
+        return "internal_cell13_voltage";    
+        break;
+      case INTERNAL_CELL14_VOLTAGE:
+        return "internal_cell14_voltage";    
+        break;
+      case INTERNAL_CELL15_VOLTAGE:
+        return "internal_cell15_voltage";    
+        break;
+      case INTERNAL_CELL16_VOLTAGE:
+        return "internal_cell16_voltage";    
+        break;     
+      case LED_MODE:
+        return "led_mode";
+        break;
+      case POWER_OFF:
+        return "power_off";
+        break;
+      case ECO_ON:
+        return "eco_on";
+        break;
+      case ECO_SHUTDOWN:
+        return "eco_shutdown";
+        break;
+      case CHARGING_MODE:
+        return "charging_mode";
+        break;
+      case POWER_LIFTING_ON:
+        return "power_lifting_on";
+        break;
+      case AC_INPUT_POWER_MAX:
+        return "ac_input_power_max";
+        break;
+      case AC_INPUT_CURRENT_MAX:
+        return "ac_input_current_max";
+        break;
+      case AC_OUTPUT_POWER_MAX:
+        return "ac_output_power_max";
+        break;
+      case AC_OUTPUT_CURRENT_MAX:
+        return "ac_output_current_max";
+        break;
+      case BATTERY_MIN_PERCENTAGE:
+        return "battery_min_percentage";
+        break;
+      case AC_CHARGE_MAX_PERCENTAGE:
+        return "ac_charge_max_percentage";
+        break;
+      default:
+        #ifdef DEBUG
+          Serial.println(F("Info 'map_field_name' found unknown field!"));
+        #endif
+        return "unknown";
+        break;
+   }
+  
+}
+
+//There is no reflection to do string to enum
+//There are a couple of ways to work aroung it... but basically are just "case" statements
+//Wapped them in a fuction
+String map_command_value(String command_name, String value){
+  String toRet = value;
+  value.toUpperCase();
+  command_name.toUpperCase(); //force case indipendence
+
+  //on / off commands
+  if(command_name == "POWER_OFF" || command_name == "AC_OUTPUT_ON" || command_name == "DC_OUTPUT_ON" || command_name == "ECO_ON" || command_name == "POWER_LIFTING_ON") {
+    if (value == "ON") {
+      toRet = "1";
+    }
+    if (value == "OFF") {
+      toRet = "0";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "LED_MODE"){
+    if (value == "LED_LOW") {
+      toRet = "1";
+    }
+    if (value == "LED_HIGH") {
+      toRet = "2";
+    }
+    if (value == "LED_SOS") {
+      toRet = "3";
+    }
+    if (value == "LED_OFF") {
+      toRet = "4";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "ECO_SHUTDOWN"){
+    if (value == "ONE_HOUR") {
+      toRet = "1";
+    }
+    if (value == "TWO_HOURS") {
+      toRet = "2";
+    }
+    if (value == "THREE_HOURS") {
+      toRet = "3";
+    }
+    if (value == "FOUR_HOURS") {
+      toRet = "4";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "CHARGING_MODE"){
+    if (value == "STANDARD") {
+      toRet = "0";
+    }
+    if (value == "SILENT") {
+      toRet = "1";
+    }
+    if (value == "TURBO") {
+      toRet = "2";
+    }
+  }
+
+
+  return toRet;
+}
+
+bool is_int(String val){
+  // Check if the payload contains only digits
+  bool isNumeric = true;
+  for (size_t i = 0; i < val.length(); i++) {
+    if (!isdigit(val[i])) {
+        isNumeric = false;
+        break;
+    }
+  }
+  return isNumeric;
+}
 
 ESPBluettiSettings wifiConfig;
 
@@ -70,10 +345,6 @@ void initBWifi(bool resetWifi){
 
   eeprom_read();
 
-  WiFiManagerParameter custom_mqtt_server("server", "MQTT Server Address", mqtt_server, 40);
-  WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port", mqtt_port, 6);
-  WiFiManagerParameter custom_mqtt_username("username", "MQTT Username", "", 40);
-  WiFiManagerParameter custom_mqtt_password("password", "MQTT Password", "", 40, "type=password");
   WiFiManagerParameter custom_ota_username("ota_username", "OTA Username", "", 40);
   WiFiManagerParameter custom_ota_password("ota_password", "OTA Password", "", 40, "type=password");
   WiFiManagerParameter custom_bluetti_device("bluetti", "Bluetti Bluetooth ID", bluetti_device_id, 40);
@@ -95,10 +366,6 @@ void initBWifi(bool resetWifi){
 
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-  wifiManager.addParameter(&custom_mqtt_server);
-  wifiManager.addParameter(&custom_mqtt_port);
-  wifiManager.addParameter(&custom_mqtt_username);
-  wifiManager.addParameter(&custom_mqtt_password);
   wifiManager.addParameter(&custom_ota_username);
   wifiManager.addParameter(&custom_ota_password);
   wifiManager.addParameter(&custom_bluetti_device);
@@ -115,10 +382,6 @@ void initBWifi(bool resetWifi){
   }
 
   if (shouldSaveConfig) {
-     strlcpy(wifiConfig.mqtt_server, custom_mqtt_server.getValue(), 40);
-     strlcpy(wifiConfig.mqtt_port, custom_mqtt_port.getValue(), 6);
-     strlcpy(wifiConfig.mqtt_username, custom_mqtt_username.getValue(), 40);
-     strlcpy(wifiConfig.mqtt_password, custom_mqtt_password.getValue(), 40);
      strlcpy(wifiConfig.ota_username, custom_ota_username.getValue(), 40);
      strlcpy(wifiConfig.ota_password, custom_ota_password.getValue(), 40);
      strlcpy(wifiConfig.bluetti_device_id, custom_bluetti_device.getValue(), 40);
@@ -145,23 +408,13 @@ void initBWifi(bool resetWifi){
   //setup web server handling
   #if MSG_VIEWER_DETAILS
       msgViewerDetails = true;
-      Serial.println(F("webserver BT/MQTT variable logging enabled..."));
+      Serial.println(F("webserver BT variable logging enabled..."));
     #else
       msgViewerDetails = false;
-      Serial.println(F("webserver BT/MQTT variable logging disabled..."));
+      Serial.println(F("webserver BT variable logging disabled..."));
   #endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", index_html, processorWebsiteUpdates);
-  });
-  server.on("/switchLogging", HTTP_GET, [](AsyncWebServerRequest *request){
-      msgViewerDetails = !msgViewerDetails;
-      if(msgViewerDetails){
-        Serial.println(F("webserver BT/MQTT variable logging enabled..."));
-      }
-      else{
-        Serial.println(F("webserver BT/MQTT variable logging disabled..."));
-      }
       request->send_P(200, "text/html", index_html, processorWebsiteUpdates);
   });
   server.on("/rebootDevice", [](AsyncWebServerRequest *request) {
@@ -180,7 +433,64 @@ void initBWifi(bool resetWifi){
     Serial.println(F("application/json: Returning the current jsonData."));
     request->send(200, "application/json", jsonStr);
   });
-  
+
+  server.on("/setData/", HTTP_GET, [](AsyncWebServerRequest *request){
+    if (!request->hasArg("command")) {
+      request->send(400, "text/plain", "Missing 'command' Parameter!");
+      return;
+    }
+    if (!request->hasArg("value")) {
+      request->send(400, "text/plain", "Missing 'value' Parameter!");
+      return;
+    }
+    String command_name = request->arg("command");
+    String payload = request->arg("value");
+
+    //force case indipendence    
+    command_name.toLowerCase();
+    payload.toUpperCase();
+
+    bt_command_t command;
+    command.prefix = 0x01;
+    command.field_update_cmd = 0x06;
+
+    Serial.print(" Raw Payload - Updated: ");
+    Serial.println(payload);
+
+    bool foundMatch = false;
+    // matching the command with the possible commands enum
+    for (int i = 0; i < (sizeof(bluetti_device_command) / sizeof(device_field_data_t)); i++){
+        if (map_field_name(bluetti_device_command[i].f_name) == command_name){
+          command.page = bluetti_device_command[i].f_page;
+          command.offset = bluetti_device_command[i].f_offset;
+          payload = map_command_value(command_name, payload);
+          foundMatch = true;
+          break;
+        }
+    }
+    // verfiy command
+    if (!foundMatch){
+      request->send(400, "text/plain", "Unknown Command!");
+      return;
+    }
+    Serial.print(" Payload - Updated: ");
+    Serial.println(payload);
+
+    // verify payload value
+    if (!is_int(payload)) {
+      request->send(400, "text/plain", "Invalid Payload Value!");
+      return;
+    }
+
+    command.len = swap_bytes(payload.toInt());
+    command.check_sum = modbus_crc((uint8_t*)&command,6);
+    
+    Serial.println(F("setting the value via BT."));
+    sendBTCommand(command);
+    
+    request->send(200, "text/plain", "ok");
+  });
+
   //setup web server events
   events.onConnect([](AsyncEventSourceClient *client){
     if(client->lastId()){
@@ -202,24 +512,19 @@ void initBWifi(bool resetWifi){
 }
 
 void update_value(enum field_names field_name, String value){
-  // TODO do json stuff and store the value in a global value
+  //sometimes we get empty values / wrong vales - all the time device_type is empty
+  if (map_field_name(field_name) == "device_type" && value.length() < 3){
+    Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
+    ESP.restart();
+  }
+  // saving the key value pair in the jsonData
   xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
   Serial.printf("Writing %s: %s", map_field_name(field_name).c_str(), value);
   jsonData[map_field_name(field_name)] = value;
   xSemaphoreGive(jsonMutex); // unlock
-/*
-  //sometimes we get empty values / wrong vales - all the time device_type is empty
-  if (map_field_name(field_name) == "device_type" && value.length() < 3){
-
-    Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
-    ESP.restart();
-   
-  } 
-*/
 }
 
 void handleWebserver() {
-  
   //Serial.println(F("DEBUG handleWebserver"));
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println(F("WiFi is disconnected, try to reconnect..."));
@@ -235,8 +540,6 @@ void handleWebserver() {
     events.send("ping",NULL,millis());
     events.send(String(millis()).c_str(),"runtime",millis());
     events.send(String(WiFi.RSSI()).c_str(),"rssi",millis());
-    events.send(String(isMQTTconnected()).c_str(),"mqtt_connected",millis());
-    events.send(String(getLastMQTTMessageTime()).c_str(),"mqtt_last_msg_time",millis());
     events.send(String(isBTconnected()).c_str(),"bt_connected",millis());
     events.send(String(getLastBTMessageTime()).c_str(),"bt_last_msg_time",millis());
     if(msgViewerDetails){
@@ -264,27 +567,6 @@ String processorWebsiteUpdates(const String& var){
   else if(var == "RUNTIME"){
     return String(millis());
   }
-  else if(var == "MQTT_IP"){
-    char msg[40];
-    if (strlen(wifiConfig.mqtt_server) == 0){
-      strlcpy(msg, "No MQTT server configured", 40);
-    }else{
-      strlcpy(msg, wifiConfig.mqtt_server, 40);
-    }
-    
-    return msg;
-  }
-  else if(var == "MQTT_PORT"){
-    char msg[6];
-    strlcpy(msg, wifiConfig.mqtt_port, 6);
-    return msg;
-  }
-  else if(var == "MQTT_CONNECTED"){
-    return String(isMQTTconnected());
-  }
-  else if(var == "LAST_MQTT_MSG_TIME"){
-    return String(getLastMQTTMessageTime());
-  }
   else if(var == "DEVICE_ID"){
     char msg[40];
     strlcpy(msg, wifiConfig.bluetti_device_id, 40);
@@ -297,7 +579,7 @@ String processorWebsiteUpdates(const String& var){
     return String(getLastBTMessageTime());
   }
   else if(var == "BT_ERROR"){
-    return String(getPublishErrorCount());
+    return String(publishErrorCount);
   }
   else if(var == "LAST_MSG"){
     if (msgViewerDetails){
@@ -306,6 +588,9 @@ String processorWebsiteUpdates(const String& var){
     else{
       return String("...disabled...");
     }
+  }
+  else {
+    return "Not Available";
   }
 }
 
