@@ -8,31 +8,49 @@
 #include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP/archive/master.zip
 #include <ESPmDNS.h>
 #include <AsyncElegantOTA.h> // https://github.com/ayushsharma82/AsyncElegantOTA/archive/master.zip
+
+
+/*
+ * --- new methods implemented on 17.08.2023 ----
+ */
 #include <ArduinoJson.h>
 #include <utils.h>
-
 
 SemaphoreHandle_t jsonMutex = xSemaphoreCreateMutex();// Mutex for synchronizing JSON access
 DynamicJsonDocument jsonData(1024);
 
-int publishErrorCount = 0;
-
-
-AsyncWebServer server(80);
-AsyncEventSource events("/events");
-
-unsigned long lastTimeWebUpdate = 0;  
-
-String lastMsg = ""; 
-
-bool msgViewerDetails = false;
-bool shouldSaveConfig = false;
-
-char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
-
-void saveConfigCallback () {
-  shouldSaveConfig = true;
+bool is_int(String val){
+  // Check if the payload contains only digits
+  bool isNumeric = true;
+  for (size_t i = 0; i < val.length(); i++) {
+    if (!isdigit(val[i])) {
+        isNumeric = false;
+        break;
+    }
+  }
+  return isNumeric;
 }
+
+void update_value(enum field_names field_name, String value){
+  //sometimes we get empty values / wrong vales - all the time device_type is empty
+  if (map_field_name(field_name) == "device_type" && value.length() < 3){
+    Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
+    ESP.restart();
+  }
+  // saving the key value pair in the jsonData
+  xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
+  Serial.printf("Writing %s: %s", map_field_name(field_name).c_str(), value);
+  jsonData[map_field_name(field_name)] = value;
+  xSemaphoreGive(jsonMutex); // unlock
+}
+/*
+ * --- end new methods ----
+ */
+
+
+/*
+ * --- end reused methods from MQTT.cpp files (https://github.com/mariolukas/Bluetti_ESP32_Bridge)
+ */
 
 String map_field_name(enum field_names f_name){
    switch(f_name) {
@@ -298,17 +316,27 @@ String map_command_value(String command_name, String value){
 
   return toRet;
 }
+/*
+ * --- end reused methods
+ */
 
-bool is_int(String val){
-  // Check if the payload contains only digits
-  bool isNumeric = true;
-  for (size_t i = 0; i < val.length(); i++) {
-    if (!isdigit(val[i])) {
-        isNumeric = false;
-        break;
-    }
-  }
-  return isNumeric;
+
+int publishErrorCount = 0;
+
+AsyncWebServer server(80);
+AsyncEventSource events("/events");
+
+unsigned long lastTimeWebUpdate = 0;  
+
+String lastMsg = ""; 
+
+bool msgViewerDetails = false;
+bool shouldSaveConfig = false;
+
+char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
+
+void saveConfigCallback () {
+  shouldSaveConfig = true;
 }
 
 ESPBluettiSettings wifiConfig;
@@ -427,6 +455,10 @@ void initBWifi(bool resetWifi){
       delay(2000);
       initBWifi(true);
   });
+
+  /*
+   * --- added requests on 17.08.2023
+   */
   server.on("/getData", HTTP_GET, [](AsyncWebServerRequest *request){
     String jsonStr;
     serializeJson(jsonData, jsonStr);
@@ -490,6 +522,9 @@ void initBWifi(bool resetWifi){
     
     request->send(200, "text/plain", "ok");
   });
+  /*
+   * --- end added requests
+   */
 
   //setup web server events
   events.onConnect([](AsyncEventSourceClient *client){
@@ -509,19 +544,6 @@ void initBWifi(bool resetWifi){
   server.begin();
   Serial.println(F("HTTP server started"));
 
-}
-
-void update_value(enum field_names field_name, String value){
-  //sometimes we get empty values / wrong vales - all the time device_type is empty
-  if (map_field_name(field_name) == "device_type" && value.length() < 3){
-    Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
-    ESP.restart();
-  }
-  // saving the key value pair in the jsonData
-  xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
-  Serial.printf("Writing %s: %s", map_field_name(field_name).c_str(), value);
-  jsonData[map_field_name(field_name)] = value;
-  xSemaphoreGive(jsonMutex); // unlock
 }
 
 void handleWebserver() {
@@ -551,7 +573,7 @@ void handleWebserver() {
 }
 
 String processorWebsiteUpdates(const String& var){
-  
+  // the values for MQTT were removed for this version (17.082023)
   if(var == "IP"){
     return String(WiFi.localIP().toString());
   }

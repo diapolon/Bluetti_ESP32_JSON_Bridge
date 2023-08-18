@@ -26,3 +26,5 @@ void loop() {
   handleBluetooth();
   handleWebserver();
 }
+
+// removed Display, and Mqtt methods

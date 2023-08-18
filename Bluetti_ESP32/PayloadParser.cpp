@@ -83,6 +83,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t l
                       p_index++;
                 }
 
+                /* changed event handler data_payload_handler to update_value (17.08.2023)*/
                 switch (bluetti_device_state[i].f_type){
                  
                   case UINT_FIELD:

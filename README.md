@@ -1,28 +1,26 @@
 ## About
-This is an ESP32 based Bluetooth to MQTT Bride for BLUETTI power stations. The project is based on https://github.com/warhammerkid/bluetti_mqtt
-The code is tested on a AC300. Other Powerstations should also work but are untested yet. The discussion on https://diysolarforum.com/threads/monitoring-bluetti-systems.37870/ was a great help for understanding the protocol. 
 
-## Community
-Join the Discord Server https://discord.gg/fWDSBTCVmB
+This is a Fork of [mariolukas/Bluetti_ESP32_Bridge](https://github.com/mariolukas/Bluetti_ESP32_Bridge) which itself is based on based on https://github.com/warhammerkid/bluetti_mqtt. The Bridge can be used to read and write values via Bluetooth to the Bluetti Powerstations via JSON http api instead of the complexer mqtt. In addition to that I removed the display support because I wanted to make it even simlper.
+
+The original code is tested on an AC300. Other Powerstations should also work but are untested.
+
+More information can be found in the issues and documentation of the mariolukas/Bluetti_ESP32_Bridge repo aswell.
 
 ## Features
 
 * easy configuration with WiFi manager
-* display support OLED 128x64 
-  * tested ESP32 WROOM with display: https://github.com/LilyGO/TTGO-T2-ESP32
-* mqtt support
-* support for BLUETTI power stations
+* support for BLUETTI power stations (change `BLUETTI_TYPE` for that)
   * AC300 (tested)
-  * AC200 (tested)
-  * EB3A (tested)
+  * AC200 (untested)
+  * EB3A (untested)
   * EP500 (untested)
-  * EP500P (tested)
-  * EP600 (some values still missing)
+  * EP500P (untested)
+  * EP600 (untested)
 * supported BLUETTI functions
-  * commands
+  * setting value / commands
     * ac output on/off
     * dc output on/off
-  * states
+  * reading values / states
     * ac input power
     * dc input power
     * ac output power
@@ -43,7 +41,6 @@ Join the Discord Server https://discord.gg/fWDSBTCVmB
 You will need to install a board support package for your ESP32. Additionally the following libraries are needed: 
 
 * https://github.com/tzapu/WiFiManager
-* https://github.com/knolleary/pubsubclient
 * https://github.com/ayushsharma82/AsyncElegantOTA
 * https://github.com/me-no-dev/ESPAsyncWebServer
 * https://github.com/me-no-dev/AsyncTCP/archive
@@ -108,18 +105,20 @@ Save the settings. The ESP32 starts sending messages to your MQTT server.
 Example ( ioBroker ):
 ![MQTT ioBroker](doc/images/iobroker.png)
 
-### MQTT Topics
+### JSON API
 
-#### Commands
-Commands are subscribed from
+#### Commands / Setting Values
 
-* /bluetti/<your_device_id>/command
-  * ac_output_on
-  * dc_output_on
+* `GET <device-ip>/setData?command=<your-command>&value=<your-value>
+  * `ac_output_on` is either `on` or `off` 
+  * `dc_output_on` is either `on` or `off`
 
-#### State
-States are published to
-* /bluetti/<your_device_id>/state
+For some devices there are more values that can be set
+see `bluetti_device_command[]` of you device (f.e bluetti_device_command in [ Device_AC200M.h](./Bluetti_ESP32/Device_AC200M.h)). Be cautios with the values you send, as they might not be valid values.
+
+#### State / Getting Values
+
+* `GET <device-ip>/getData` returns a json containing the following values
   * ac_output_on
   * dc_output_on
   * dc_input_power
@@ -132,32 +131,21 @@ States are published to
   * power_generation
   * total_battery_percent
 
-## Display
-Config Display:
-* By default, display is disabled. 
-* Configurations (customize of file Bluetti_ESP32/config.h): 
-  * Enable display: uncomment #define DISPLAYSSD1306 1
-  * Enable reset of display on init: uncomment DISPLAY_RST_PORT
-    * Known needed for LoRa TTGO v1.0
-  * set SCL & SDA ports: default ports are set to SCL=4 & SDA5, to change update DISPLAY_SCL_PORT and DISPLAY_SDA_PORT 
+## Changelog
 
-Display functionality:
-* Show current assiged IP address (AP mode or normal)
-* Show different wifi connection logo, depending on the mode its in and wifi Strength in normal mode (4 bars)
-* Show the running time of the device in the format "11d12h15m" Currently max until 49 days as this is the time millis() is reset. TODO fix this
-* ability to show status message, currently shows the init and running status. 
-* a progressbar is available but currently not used anywhere. (to see where it can be used)
-* a bluetooth icon is available, but currently not linked with the bluetooth connection itself.(TODO)
+* removed `MQTT.h`, `MQTT.cpp`, but used method `map_field_name` and `map_command_value` from them -> BWifi.cpp
 
-Example display screen:
-![DisplayImage](doc/images/display.jpg)
+* removed mqtt values and handling from everywhere (including Wifimanager Parameters)
+* removed all Display compatibility
 
+* added server.on... for  `/getData` and `/setData` (including jsonData value)
+* changed event handler for Bluetooth reads from `MQTT.cpp - void data_payload_field` to `BWifi.cpp - void update_values`
+* renamed serial prints `BT/MQTT` -> `BT` on multiple places
+* removed `/switchLogging` url
 
-## TODO
+* changed index.h html Headings and the MQTT Block -> JSON, removed mqtt values
+* removed unecessary libs (due to feature removal)
 
-* add full feature set to device files
-* adding support for SD-Card reader, for writing csv data to an sd-card
-* adding logging poll commands
 
 ## Disclaimer
 
