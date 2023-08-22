@@ -1,6 +1,6 @@
 ## About
 
-This is a Fork of [mariolukas/Bluetti_ESP32_Bridge](https://github.com/mariolukas/Bluetti_ESP32_Bridge) which itself is based on based on https://github.com/warhammerkid/bluetti_mqtt. The Bridge can be used to read and write values via Bluetooth to the Bluetti Powerstations via JSON http api instead of the complexer mqtt. In addition to that I removed the display support because I wanted to make it even simlper.
+This is a Fork of [mariolukas/Bluetti_ESP32_Bridge](https://github.com/mariolukas/Bluetti_ESP32_Bridge) which itself is based on https://github.com/warhammerkid/bluetti_mqtt. The Bridge can be used to read and write values via Bluetooth to the Bluetti Powerstations via JSON http api instead of the complexer mqtt. In addition to that I removed the display support because I wanted to make it even simlper.
 
 The original code is tested on an AC300. Other Powerstations should also work but are untested.
 
