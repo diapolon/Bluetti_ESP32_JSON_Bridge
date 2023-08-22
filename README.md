@@ -94,7 +94,7 @@ Select "Configure WiFi"
 
 ![Wifi Manager start menu](doc/images/wifi_manager.png)
 
-Configure your WiFi and set the address of your MQTT server and enter the Bluetooth ID of your
+Configure your WiFi and enter the Bluetooth ID of your
 Bluetti Device. Optionally you can specify username and password to protect the web OTA interface.
 You can use a mobile phone and/or the Bluetti APP for finding the correct Bluetooth ID of your device.
 
@@ -102,8 +102,6 @@ You can use a mobile phone and/or the Bluetti APP for finding the correct Blueto
 
 Save the settings. The ESP32 starts sending messages to your MQTT server.
 
-Example ( ioBroker ):
-![MQTT ioBroker](doc/images/iobroker.png)
 
 ### JSON API
 
