@@ -1,6 +1,6 @@
 ## About
 
-This is a Fork of [mariolukas/Bluetti_ESP32_Bridge](https://github.com/mariolukas/Bluetti_ESP32_Bridge) which itself is based on based on https://github.com/warhammerkid/bluetti_mqtt. The Bridge can be used to read and write values via Bluetooth to the Bluetti Powerstations via JSON http api instead of the complexer mqtt. In addition to that I removed the display support because I wanted to make it even simlper.
+This is a Fork of [mariolukas/Bluetti_ESP32_Bridge](https://github.com/mariolukas/Bluetti_ESP32_Bridge) which itself is based on https://github.com/warhammerkid/bluetti_mqtt. The Bridge can be used to read and write values via Bluetooth to the Bluetti Powerstations via JSON http api instead of the complexer mqtt. In addition to that I removed the display support because I wanted to make it even simlper.
 
 The original code is tested on an AC300. Other Powerstations should also work but are untested.
 
@@ -94,7 +94,7 @@ Select "Configure WiFi"
 
 ![Wifi Manager start menu](doc/images/wifi_manager.png)
 
-Configure your WiFi and set the address of your MQTT server and enter the Bluetooth ID of your
+Configure your WiFi and enter the Bluetooth ID of your
 Bluetti Device. Optionally you can specify username and password to protect the web OTA interface.
 You can use a mobile phone and/or the Bluetti APP for finding the correct Bluetooth ID of your device.
 
@@ -102,8 +102,6 @@ You can use a mobile phone and/or the Bluetti APP for finding the correct Blueto
 
 Save the settings. The ESP32 starts sending messages to your MQTT server.
 
-Example ( ioBroker ):
-![MQTT ioBroker](doc/images/iobroker.png)
 
 ### JSON API
 
