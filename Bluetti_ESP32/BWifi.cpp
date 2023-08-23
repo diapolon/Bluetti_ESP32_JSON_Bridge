@@ -32,6 +32,9 @@ bool is_int(String val){
 }
 
 void update_value(enum field_names field_name, String value){
+  // free the old/previous strings/values, as they are never free automatically
+  jsonData.garbageCollect();
+
   //sometimes we get empty values / wrong vales - all the time device_type is empty
   if (map_field_name(field_name) == "device_type" && value.length() < 3){
     Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
