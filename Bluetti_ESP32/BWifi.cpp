@@ -15,9 +15,46 @@
  */
 #include <ArduinoJson.h>
 #include <utils.h>
+#include <vector>
 
+struct KeyValuePair {
+    String key;
+    String value;
+};
+std::vector<KeyValuePair> currentValues;
 SemaphoreHandle_t jsonMutex = xSemaphoreCreateMutex();// Mutex for synchronizing JSON access
-DynamicJsonDocument jsonData(1024);
+
+void writeValue(const String& key, const String& value) {
+    xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
+
+    // Search for the key in the vector
+    for (auto& kvp : currentValues) {
+        if (kvp.key == key) {
+            // Key found, update the value
+            kvp.value = value;
+            xSemaphoreGive(jsonMutex); // unlock
+            return;
+        }
+    }
+    
+    // Key not found, add a new key-value pair
+    currentValues.push_back({key, value});
+    xSemaphoreGive(jsonMutex); // unlock
+}
+
+String getJSON() {
+  DynamicJsonDocument jsonDocument(1024);
+  JsonObject root = jsonDocument.to<JsonObject>();
+
+  // write key value pairs into json
+  for (const auto& kvp : currentValues) {
+      root[kvp.key] = kvp.value;
+  }
+
+  String jsonString;
+  serializeJson(root, jsonString);
+  return jsonString;
+}
 
 bool is_int(String val){
   // Check if the payload contains only digits
@@ -32,19 +69,13 @@ bool is_int(String val){
 }
 
 void update_value(enum field_names field_name, String value){
-  // free the old/previous strings/values, as they are never free automatically
-  jsonData.garbageCollect();
-
   //sometimes we get empty values / wrong vales - all the time device_type is empty
   if (map_field_name(field_name) == "device_type" && value.length() < 3){
     Serial.println(F("Error while publishTopic! 'device_type' can't be empty, reboot device)"));
     ESP.restart();
   }
-  // saving the key value pair in the jsonData
-  xSemaphoreTake(jsonMutex, portMAX_DELAY); // lock
   Serial.printf("Writing %s: %s", map_field_name(field_name).c_str(), value);
-  jsonData[map_field_name(field_name)] = value;
-  xSemaphoreGive(jsonMutex); // unlock
+  writeValue(map_field_name(field_name), value);
 }
 /*
  * --- end new methods ----
@@ -463,8 +494,7 @@ void initBWifi(bool resetWifi){
    * --- added requests on 17.08.2023
    */
   server.on("/getData", HTTP_GET, [](AsyncWebServerRequest *request){
-    String jsonStr;
-    serializeJson(jsonData, jsonStr);
+    String jsonStr = getJSON();
     Serial.println(F("application/json: Returning the current jsonData."));
     request->send(200, "application/json", jsonStr);
   });
