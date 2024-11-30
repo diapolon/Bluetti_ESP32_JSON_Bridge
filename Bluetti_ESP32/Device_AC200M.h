@@ -38,8 +38,8 @@ static device_field_data_t bluetti_device_state[] = {
 
   //Page 0x00 Battery Details
   //constant value, number off possible battery packs, 3 on AC200M, one internal and two external
-  {PACK_NUM_MAX,              0x00, 0x5B, 1, 0, 0, UINT_FIELD },
-  {PACK_NUM,                  0x00, 0x60, 1, 0, 0, UINT_FIELD },
+  {PACK_NUM_MAX,              0x00, 0x5B, 1, 0, 0, UINT_FIELD},
+  {PACK_NUM,                  0x00, 0x60, 1, 0, 0, UINT_FIELD},
   {PACK_BATTERY_PERCENT,      0x00, 0x63, 1, 0, 0, UINT_FIELD},
   
   //Page 0x00 Battery Data 

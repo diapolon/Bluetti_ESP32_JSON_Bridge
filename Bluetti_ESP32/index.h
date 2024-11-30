@@ -19,7 +19,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div class="topnav">
     <h1>Bluetti JSON Bridge web server</h1>
     <div class="version">
-      Firmware Version: 0.1.3 (<a href='/update' target='_blank'>Update</a>)
+      Firmware Version: 0.1.4 (<a href='/update' target='_blank'>Update</a>)
     </div>
   </div>
   <div class="content">
