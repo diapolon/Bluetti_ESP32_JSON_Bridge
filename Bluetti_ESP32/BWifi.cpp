@@ -4,10 +4,10 @@
 #include "index.h"  //Web page header file
 #include <EEPROM.h>
 #include <WiFiManager.h>
-#include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer/archive/master.zip
-#include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP/archive/master.zip
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 #include <ESPmDNS.h>
-#include <AsyncElegantOTA.h> // https://github.com/ayushsharma82/AsyncElegantOTA/archive/master.zip
+#include <ElegantOTA.h> 
 
 
 /*
@@ -477,7 +477,7 @@ void initBWifi(bool resetWifi){
   #endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", index_html, processorWebsiteUpdates);
+      request->send(200, "text/html", index_html, processorWebsiteUpdates);
   });
   server.on("/rebootDevice", [](AsyncWebServerRequest *request) {
       request->send(200, "text/plain", "reboot in 2sec");
@@ -569,9 +569,9 @@ void initBWifi(bool resetWifi){
   server.addHandler(&events);
 
   if (!wifiConfig.ota_username) {
-    AsyncElegantOTA.begin(&server);
+    ElegantOTA.begin(&server);
   } else {
-    AsyncElegantOTA.begin(&server, wifiConfig.ota_username, wifiConfig.ota_password);
+    ElegantOTA.begin(&server, wifiConfig.ota_username, wifiConfig.ota_password);
   }
 
   server.begin();
