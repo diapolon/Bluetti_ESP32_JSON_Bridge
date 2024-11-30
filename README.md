@@ -41,9 +41,9 @@ More information can be found in the issues and documentation of the mariolukas/
 You will need to install a board support package for your ESP32. Additionally the following libraries are needed: 
 
 * https://github.com/tzapu/WiFiManager
-* https://github.com/ayushsharma82/AsyncElegantOTA
-* https://github.com/me-no-dev/ESPAsyncWebServer
-* https://github.com/me-no-dev/AsyncTCP/archive
+* https://github.com/ayushsharma82/ElegantOTA
+* https://github.com/mathieucarbou/ESPAsyncWebServer
+* https://github.com/mathieucarbou/AsyncTCP
 
 Change the partition scheme with Tools -> Partition Scheme to
 
