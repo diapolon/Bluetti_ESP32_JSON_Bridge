@@ -11,7 +11,7 @@ More information can be found in the issues and documentation of the mariolukas/
 * easy configuration with WiFi manager
 * support for BLUETTI power stations (change `BLUETTI_TYPE` for that)
   * AC300 (tested)
-  * AC200 (untested)
+  * AC200 (tested)
   * EB3A (untested)
   * EP500 (untested)
   * EP500P (untested)
